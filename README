@@ -1,0 +1,11 @@
+
+草擬的目標
+
+1.使用編輯總資料庫 裡面的成語一覽
+http://dict.idioms.moe.edu.tw/cgi-bin/cydic/gsweb.cgi?ccd=Al6Tmc&o=e0&sec=sec6&brwtyp=sco&field_1=sco1&field_1_value=XX&field_2=sco2&active=dicfulu&limitval=fltype%3D%22%E7%B7%A8%E8%BC%AF%E7%B8%BD%E8%B3%87%E6%96%99%E5%BA%AB%22&brwsimpfmt=84&dicfululv2=1&dicfululv3=1
+
+2.將其中的各成語之「用法說明」(Usage)、辨識(Recognize)、「參考詞語」(RelatedWord)、「音讀」(Pronounce)、「釋義」(Meaning)、「典源」(Source)、「
+書證」(Refernece) 解析並儲存
+
+3.建立 data api 以 input 為「成語字詞」，
+輸出為該字的這七個資料為主的 API。
