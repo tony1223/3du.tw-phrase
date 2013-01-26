@@ -20,11 +20,14 @@ function search(ccd,word,cb){
 		},function(response){
                           console.log("parsing "+word);
 			var titles = $(response).find(".fmt1title a");
+
+			var word_defs = [];
+			var content_deferes = [];	
 			titles.each(function(){
 				var href= base_url($(this).attr("href"));
 				var found_word = $(this).text();
 				fs.appendFile("parse_log.txt", word+"::"+found_word+"\n", 'UTF-8');
-				$.get(href,function(html){
+				word_def = $.get(href,function(html){
 					try{
 						fs.mkdirSync("words");
 					}catch(ex){	}
@@ -35,39 +38,46 @@ function search(ccd,word,cb){
 					}
 					try{
 						fs.mkdirSync("words/"+found_word);
-					}catch(ex){}					
+					}catch(ex){}
 					$(html).find(".leftm a").each(function(ind){
 						var item = "";
 
 						if($(this).attr("href") == "#XX"){
 							return true;
 						}
+						var defered = null;
 						switch(ind){
 							case 0:
-							 	handle_pronounce_maining(found_word,base_url($(this).attr("href")));
+							 	defered = handle_pronounce_maining(found_word,base_url($(this).attr("href")));
 							 	break;
 							case 1:
-								handle_source(found_word,base_url($(this).attr("href")));
+								defered = handle_source(found_word,base_url($(this).attr("href")));
 								break;
 							case 2:
-								handle_source_description(found_word,base_url($(this).attr("href")));
+								defered = handle_source_description(found_word,base_url($(this).attr("href")));
 								break;
 							case 3:
-								handle_reference(found_word,base_url($(this).attr("href")));
+								defered = handle_reference(found_word,base_url($(this).attr("href")));
 								break;
 							case 4:
-								handle_usage(found_word,base_url($(this).attr("href")));
+								defered = handle_usage(found_word,base_url($(this).attr("href")));
 								break;
 							case 5:
-								handle_recognize(found_word,base_url($(this).attr("href")));
+								defered = handle_recognize(found_word,base_url($(this).attr("href")));
 								break;
 							case 6:
-								handle_related_word(found_word,base_url($(this).attr("href")));
+								defered = handle_related_word(found_word,base_url($(this).attr("href")));
 								break;
 						}
+						content_deferes.push(defered);
 					});
 				});
+				word_defs.push(word_def);
 			});
+
+			$.when(word_def).then(function(){
+				$.when(word_def).then(cb);
+			})
 			
 		});
 
@@ -75,7 +85,7 @@ function search(ccd,word,cb){
 
 
 function handle_pronounce_maining(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		//pronounce
@@ -94,7 +104,7 @@ function handle_pronounce_maining(word,href){
 
 }
 function handle_source(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var obj = {
@@ -104,7 +114,7 @@ function handle_source(word,href){
 	});
 }
 function handle_source_description(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var obj = {
@@ -114,7 +124,7 @@ function handle_source_description(word,href){
 	});
 }
 function handle_reference(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var referencelist = [];
@@ -130,7 +140,7 @@ function handle_reference(word,href){
 	});
 }
 function handle_usage(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var items = $res.find(".std2");
@@ -145,7 +155,7 @@ function handle_usage(word,href){
 }
 function handle_recognize(word,href){
 	//TODO check more details
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var obj = {
@@ -156,7 +166,7 @@ function handle_recognize(word,href){
 	
 }
 function handle_related_word(word,href){
-	$.get(href,function(res){
+	return $.get(href,function(res){
 		var $res = $(res);
 
 		var items = $res.find(".fmt16_table");
