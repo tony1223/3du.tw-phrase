@@ -1,0 +1,196 @@
+
+var $ = require("jQuery"),
+	fs = require("fs");
+
+function base_url(str){
+	return "http://dict.idioms.moe.edu.tw"+str;
+}
+
+
+function search(ccd,word){
+
+	$.post("http://dict.idioms.moe.edu.tw/cgi-bin/cydic/gsweb.cgi",
+		{
+				basicoptsch:1,
+				ccd:ccd,
+				input:"檢索",
+				o:"e0",
+				qs0:word,
+				sec:"sec1"
+		},function(response){
+			var titles = $(response).find(".fmt1title a");
+			titles.each(function(){
+				var href= base_url($(this).attr("href"));
+				var found_word = $(this).text();
+				fs.appendFile("parse_log.txt", word+"::"+found_word, 'UTF-8');
+				$.get(href,function(html){
+					try{
+						fs.mkdirSync("words");
+					}catch(ex){	}
+
+					//如果抓過就跳過
+					if(fs.existsSync("words/"+found_word)){
+						return true;
+					}
+					try{
+						fs.mkdirSync("words/"+found_word);
+					}catch(ex){}					
+					$(html).find(".leftm a").each(function(ind){
+						var item = "";
+
+						if($(this).attr("href") == "#XX"){
+							return true;
+						}
+						switch(ind){
+							case 0:
+							 	handle_pronounce_maining(found_word,base_url($(this).attr("href")));
+							 	break;
+							case 1:
+								handle_source(found_word,base_url($(this).attr("href")));
+								break;
+							case 2:
+								handle_source_description(found_word,base_url($(this).attr("href")));
+								break;
+							case 3:
+								handle_reference(found_word,base_url($(this).attr("href")));
+								break;
+							case 4:
+								handle_usage(found_word,base_url($(this).attr("href")));
+								break;
+							case 5:
+								handle_recognize(found_word,base_url($(this).attr("href")));
+								break;
+							case 6:
+								handle_related_word(found_word,base_url($(this).attr("href")));
+								break;
+						}
+					});
+				});
+			});
+			
+		});
+
+}
+
+
+function handle_pronounce_maining(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		//pronounce
+		var obj = {
+			english_pronounce:$res.find(".english_word").text(),
+			chinese_pronounce:$res.find(".std2:eq(1)").text()
+		};
+		fs.writeFileSync("words/"+word+"/pronounce",JSON.stringify(obj) , "UTF-8");
+
+		//meaning
+		obj = {
+			meaning: $res.find(".std2:eq(3)").text()
+		};
+		fs.writeFileSync("words/"+word+"/meaning",JSON.stringify(obj) , "UTF-8");
+	});
+
+}
+function handle_source(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var obj = {
+			source:$res.find(".std2:eq(0)").html()
+		};
+		fs.writeFileSync("words/"+word+"/source",JSON.stringify(obj) , "UTF-8");
+	});
+}
+function handle_source_description(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var obj = {
+			sourceDescripton:$res.find(".std2:eq(0)").html()
+		};
+		fs.writeFileSync("words/"+word+"/sourceDescripton",JSON.stringify(obj) , "UTF-8");
+	});
+}
+function handle_reference(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var referencelist = [];
+		$res.find(".std2 .Rulediv").each(function(){
+			$(this).find(".english_word").remove();
+			referencelist.push($(this).text());
+		});
+
+		var obj = {
+			referencelist:referencelist
+		};
+		fs.writeFileSync("words/"+word+"/reference",JSON.stringify(obj) , "UTF-8");
+	});
+}
+function handle_usage(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var items = $res.find(".std2");
+
+		var obj = {
+			meaningDesc:items.eq(0).text(), //語意說明
+			usedSituation: items.eq(1).text(), //使用類別,
+			samples:items.eq(2).text() //例句
+		};
+		fs.writeFileSync("words/"+word+"/usage",JSON.stringify(obj) , "UTF-8");
+	});
+}
+function handle_recognize(word,href){
+	//TODO check more details
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var items = $res.find(".diffaliketable tr");
+
+		var likes = [];
+		items.each(function(){
+			likes.push($(this).find("td:eq(1)").text());
+		});
+		var obj = {
+			likes: likes  //近義
+		};
+		fs.writeFileSync("words/"+word+"/recognize",JSON.stringify(obj) , "UTF-8");
+	});
+	
+}
+function handle_related_word(word,href){
+	$.get(href,function(res){
+		var $res = $(res);
+
+		var items = $res.find(".fmt16_table");
+		var words = [];
+		items.each(function(){
+			var tds = $(this).find(".fmt16_td2");
+			var word = {
+				name: tds.eq(0).text(),
+				chinese_pronounce:tds.eq(1).text(),
+				english_pronounce:tds.eq(2).text()
+			};
+			words.push(word);
+		});
+		var obj = {
+			words: words  //近義
+		};
+		fs.writeFileSync("words/"+word+"/related_word",JSON.stringify(obj) , "UTF-8");
+	});
+}
+
+function GetCCD(cb){
+	$.get("http://dict.idioms.moe.edu.tw/cgi-bin/cydic/gsweb.cgi?o=dcydic&schfmt=pic",function(response){
+		var start = response.indexOf("ccd=");
+		var end = response.indexOf("&",start);
+		var ccd = response.substring(start+4,end);
+		cb(ccd);
+	});
+}
+
+GetCCD(function(ccd){
+	search(ccd,"以卵擊石");
+});
