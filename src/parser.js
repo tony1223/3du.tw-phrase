@@ -7,7 +7,7 @@ function base_url(str){
 }
 
 
-function search(ccd,word){
+function search(ccd,word,cb){
 
 	$.post("http://dict.idioms.moe.edu.tw/cgi-bin/cydic/gsweb.cgi",
 		{
@@ -18,11 +18,12 @@ function search(ccd,word){
 				qs0:word,
 				sec:"sec1"
 		},function(response){
+                          console.log("parsing "+word);
 			var titles = $(response).find(".fmt1title a");
 			titles.each(function(){
 				var href= base_url($(this).attr("href"));
 				var found_word = $(this).text();
-				fs.appendFile("parse_log.txt", word+"::"+found_word, 'UTF-8');
+				fs.appendFile("parse_log.txt", word+"::"+found_word+"\n", 'UTF-8');
 				$.get(href,function(html){
 					try{
 						fs.mkdirSync("words");
@@ -147,14 +148,8 @@ function handle_recognize(word,href){
 	$.get(href,function(res){
 		var $res = $(res);
 
-		var items = $res.find(".diffaliketable tr");
-
-		var likes = [];
-		items.each(function(){
-			likes.push($(this).find("td:eq(1)").text());
-		});
 		var obj = {
-			likes: likes  //近義
+			recognized : $res.find(".std2").html()
 		};
 		fs.writeFileSync("words/"+word+"/recognize",JSON.stringify(obj) , "UTF-8");
 	});
@@ -171,7 +166,8 @@ function handle_related_word(word,href){
 			var word = {
 				name: tds.eq(0).text(),
 				chinese_pronounce:tds.eq(1).text(),
-				english_pronounce:tds.eq(2).text()
+				english_pronounce:tds.eq(2).text(),
+				meaning:tds.eq(3).text()
 			};
 			words.push(word);
 		});
@@ -191,6 +187,32 @@ function GetCCD(cb){
 	});
 }
 
+/*
 GetCCD(function(ccd){
-	search(ccd,"以卵擊石");
+	search(ccd,"舉一反三");
+});
+*/
+
+
+fs.readFile('words.csv', function (err, data) {
+	if (err) throw err;
+
+	var lines = data.toString().split(/[\r\n]+/);
+	GetCCD(function(ccd){
+
+           var i =0;
+           var getInfo = function(i){
+            search(ccd,lines[i],function(){
+                if(i > lines.length -1){
+                    return true;
+                }
+                getInfo(i+1);
+               
+            });
+           }
+//	   $.each(lines,function(ind,item){
+//	    search(ccd,item)
+//	   });
+	});
+
 });
