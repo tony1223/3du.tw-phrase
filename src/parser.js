@@ -9,7 +9,7 @@ function base_url(str){
 
 function search(ccd,word,cb){
 	if(fs.existsSync("words/"+word+"/pronounce")){
-		var p = JSON.parse(fs.readFileSync("words/"+word+"/pronounce");
+		var p = JSON.parse(fs.readFileSync("words/"+word+"/pronounce"));
 		if(p.chinese_pronounce != null){
 			cb();
 			return true;
