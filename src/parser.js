@@ -8,7 +8,13 @@ function base_url(str){
 
 
 function search(ccd,word,cb){
-
+	if(fs.existsSync("words/"+word+"/pronounce")){
+		var p = JSON.parse(fs.readFileSync("words/"+word+"/pronounce");
+		if(p.chinese_pronounce != null){
+			cb();
+			return true;
+		}
+	}
 	$.post("http://dict.idioms.moe.edu.tw/cgi-bin/cydic/gsweb.cgi",
 		{
 				basicoptsch:1,
@@ -33,9 +39,9 @@ function search(ccd,word,cb){
 					}catch(ex){	}
 
 					//如果抓過就跳過
-					if(fs.existsSync("words/"+found_word)){
-						return true;
-					}
+					// if(fs.existsSync("words/"+found_word)){
+					// 	return true;
+					// }
 					try{
 						fs.mkdirSync("words/"+found_word);
 					}catch(ex){}
@@ -209,17 +215,16 @@ fs.readFile('words.csv', function (err, data) {
 
 	var lines = data.toString().split(/[\r\n]+/);
 	GetCCD(function(ccd){
-
-           var i =0;
-           var getInfo = function(i){
-            search(ccd,lines[i],function(){
-                if(i > lines.length -1){
-                    return true;
-                }
-                getInfo(i+1);
-               
-            });
-           }
+       var i =0;
+       var getInfo = function(i){
+        search(ccd,lines[i],function(){
+            if(i > lines.length -1){
+                return true;
+            }
+            getInfo(i+1);
+           
+        });
+       }
 //	   $.each(lines,function(ind,item){
 //	    search(ccd,item)
 //	   });
